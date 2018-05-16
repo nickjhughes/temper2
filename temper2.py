@@ -9,7 +9,8 @@ class Temper2:
     product_id = 0x2107
     name_query = [0x01, 0x86, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00]
     temp_query = [0x01, 0x80, 0x33, 0x01, 0x00, 0x00, 0x00, 0x00]
-    max_open_tries = 5
+    max_open_tries = 10
+    read_timeout = 500
 
     def __init__(self):
         self.h = hid.device()
@@ -34,25 +35,33 @@ class Temper2:
 
     def get_name(self):
         self.write(self.name_query)
-        resp1 = self.read(8)
-        resp2 = self.read(8)
+        resp1 = self.read(8, self.read_timeout)
+        resp2 = self.read(8, self.read_timeout)
         resp1_chars = self._read_string(resp1)
         resp2_chars = self._read_string(resp2)
         return resp1_chars + resp2_chars
 
     def get_temp(self):
         self.write(self.temp_query)
-        resp1 = self.read(8)
-        resp2 = self.read(8)
+        resp1 = self.read(8, self.read_timeout)
+        resp2 = self.read(8, self.read_timeout)
+        if not resp1:
+            return None, None
         int_temp = self._read_temp(resp1)
-        ext_temp = self._read_temp(resp2)
+        if not resp2:
+            ext_temp = None
+        else:
+            ext_temp = self._read_temp(resp2)
+            if ext_temp == 200:
+                # No external temperature recorded
+                ext_temp = None
         return int_temp, ext_temp
 
     def write(self, data):
         self.h.write(data)
 
-    def read(self, size):
-        return self.h.read(size)
+    def read(self, size, timeout=0):
+        return self.h.read(size, timeout)
 
     @staticmethod
     def _read_string(b):
