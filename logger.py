@@ -22,6 +22,11 @@ if __name__ == '__main__':
             int_temp, ext_temp = t.get_temp()
             timestamp = datetime.datetime.utcnow().\
                 replace(microsecond=0).isoformat()
-            f.write(f'{timestamp},{int_temp},{ext_temp}\n')
+            params = {
+                'timestamp': timestamp,
+                'int_temp': int_temp,
+                'ext_temp': ext_temp
+            }
+            f.write('{timestamp},{int_temp},{ext_temp}\n'.format(**params))
             f.flush()
             time.sleep(args.freq)
